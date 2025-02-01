@@ -1,0 +1,20 @@
+syntax = "proto3"; 
+
+package api;
+
+option go_package = "pkg/api"; 
+
+service EmailSender {
+    rpc SendEventNotification(SendEventNotificationRequest) returns (SendEventNotificationResponse);
+}
+
+message SendEventNotificationRequest {
+    repeated string emailAddresses = 1;
+    string eventName = 2;
+    string eventDate = 3;
+}
+
+message SendEventNotificationResponse {
+    bool isSucceed = 1;
+    string message = 2;
+}
