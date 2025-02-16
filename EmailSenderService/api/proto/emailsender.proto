@@ -1,20 +1,36 @@
-syntax = "proto3"; 
+syntax = "proto3";
 
-package api;
+package notifications;
 
-option go_package = "pkg/api"; 
+option go_package = "proto/notifications"; // Путь к сгенерированному коду
 
-service EmailSender {
-    rpc SendEventNotification(SendEventNotificationRequest) returns (SendEventNotificationResponse);
+// Сервис для управления уведомлениями
+service NotificationService {
+  // Метод для создания уведомлений
+  rpc CreateNotification (CreateNotificationRequest) returns (CreateNotificationResponse);
+
+  // Метод для удаления уведомлений
+  rpc DeleteNotifications (DeleteNotificationsRequest) returns (DeleteNotificationsResponse);
 }
 
-message SendEventNotificationRequest {
-    repeated string emailAddresses = 1;
-    string eventName = 2;
-    string eventDate = 3;
+// Запрос на создание уведомления
+message CreateNotificationRequest {
+  string user_email = 1;  // Email пользователя
+  string event_name = 2;  // Название мероприятия
+  int64 event_time = 3;   // Время события (в формате Unix timestamp)
 }
 
-message SendEventNotificationResponse {
-    bool isSucceed = 1;
-    string message = 2;
+// Ответ после создания уведомления
+message CreateNotificationResponse {
+  repeated int64 notification_ids = 1; // Список ID созданных уведомлений
+}
+
+// Запрос на удаление уведомлений
+message DeleteNotificationsRequest {
+  repeated int64 notification_ids = 1; // Список ID уведомлений для удаления
+}
+
+// Ответ после удаления уведомлений
+message DeleteNotificationsResponse {
+  bool success = 1; // Успешно ли выполнено удаление
 }

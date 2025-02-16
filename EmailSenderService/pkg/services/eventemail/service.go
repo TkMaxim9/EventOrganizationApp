@@ -6,7 +6,7 @@ import (
 	"net/smtp"
 )
 
-func SendEventNotification(addresses []string, event string, date string) (bool, error) {
+func SendEventNotification(address string, event string, date string) (bool, error) {
 	// Конфигурация SMTP
 	smtpHost := "smtp.yandex.ru"
 	smtpPort := "465"
@@ -43,11 +43,9 @@ func SendEventNotification(addresses []string, event string, date string) (bool,
 		return false, fmt.Errorf("failed to set sender: %v", err)
 	}
 
-	// Установка адресатов
-	for _, address := range addresses {
-		if err := client.Rcpt(address); err != nil {
-			return false, fmt.Errorf("failed to set recipient: %v", err)
-		}
+	// Установка адресата
+	if err := client.Rcpt(address); err != nil {
+		return false, fmt.Errorf("failed to set recipient: %v", err)
 	}
 
 	// Отправка сообщения

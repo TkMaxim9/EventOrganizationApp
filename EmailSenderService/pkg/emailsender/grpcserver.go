@@ -1,25 +1,53 @@
 package emailsender
 
 import (
-	"EmailSenderService/pkg/api"
-	"EmailSenderService/pkg/services/eventemail"
+	// "EmailSenderService/pkg/services/eventemail"
+	"EmailSenderService/config"
+	"EmailSenderService/internal/storage"
 	"context"
-	"fmt"
+	"log"
+	"os"
+	"time"
+
+	pb "github.com/TkMaxim9/EventOrganizationApp/proto/notifications"
 )
 
 type GRPCServer struct {
-	api.UnimplementedEmailSenderServer
+	pb.UnimplementedNotificationServiceServer
 }
 
-func (s *GRPCServer) SendEventNotification(ctx context.Context, req *api.SendEventNotificationRequest) (*api.SendEventNotificationResponse, error) {
-	res, err := eventemail.SendEventNotification(req.GetEmailAddresses(), req.GetEventName(), req.GetEventDate())
+func (s *GRPCServer) CreateNotification(ctx context.Context, req *pb.CreateNotificationRequest) (*pb.CreateNotificationResponse, error) {
+	// Преобразуем Unix timestamp в time.Time
+	eventTime := time.Unix(req.GetEventTime(), 0)
 
-	if err != nil {
-		fmt.Println("error")
+	dto := storage.CreateNotificationDto{
+		UserEmail: req.GetUserEmail(),
+		EventName: req.GetEventName(),
+		EventTime: eventTime,
 	}
 
-	return &api.SendEventNotificationResponse{
-		IsSucceed: res,
-		Message:   "Email request done",
-	}, err
+	ids, err := config.GlobalStorage.AddNotification(dto)
+	if err != nil {
+		log.Fatalf("error while adding notification")
+		os.Exit(1)
+	}
+
+	return &pb.CreateNotificationResponse{
+		NotificationIds: ids,
+	}, nil
+}
+
+func (s *GRPCServer) DeleteNotifications(ctx context.Context, req *pb.DeleteNotificationsRequest) (*pb.DeleteNotificationsResponse, error) {
+	ids := req.GetNotificationIds()
+
+	err := config.GlobalStorage.DeleteNotifications(ids[0], ids[1])
+
+	if err != nil {
+		log.Fatalf("error while deleting notification")
+		os.Exit(1)
+	}
+
+	return &pb.DeleteNotificationsResponse{
+		Success: true,
+	}, nil
 }
