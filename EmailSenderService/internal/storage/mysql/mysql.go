@@ -25,12 +25,19 @@ func New(storagePath string) (*Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	driver, _ := mysql.WithInstance(db, &mysql.Config{})
-	m, _ := migrate.NewWithDatabaseInstance(
+	driver, err := mysql.WithInstance(db, &mysql.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to create MySQL driver: %w", op, err)
+	}
+	m, err := migrate.NewWithDatabaseInstance(
 		"file://./migrations",
 		"mysql",
 		driver,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to initialize migrations: %w", op, err)
+	}
+
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return nil, fmt.Errorf("%s: error applying migrations: %w", op, err)
 	}
@@ -155,7 +162,7 @@ func (s *Storage) ProcessNotifications() {
 		}
 
 		// Удаляем уведомление из базы данных
-		_, err := s.Db.Exec("DELETE FROM notifications WHERE id = $1", id)
+		_, err := s.Db.Exec("DELETE FROM notifications WHERE id = ?", id)
 		if err != nil {
 			log.Printf("Failed to delete notification with ID %d: %v", id, err)
 		}

@@ -1,13 +1,15 @@
 package events
 
 import (
+	// emailsendergrpc "Backend/internal/clients/emailsender/grpc"
 	"Backend/internal/lib/response"
 	"Backend/internal/storage"
+	"log/slog"
+	"net/http"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
-	"log/slog"
-	"net/http"
 )
 
 type Response struct {

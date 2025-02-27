@@ -4,8 +4,10 @@ github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
-github.com/TkMaxim9/EventOrganizationApp v0.0.0-20250216161112-82d658b1724e h1:2maTcuiiK4q+ltHtg8fzdKB+Dl2EXkBRSqJXnJAKVcE=
-github.com/TkMaxim9/EventOrganizationApp v0.0.0-20250216161112-82d658b1724e/go.mod h1:XPHSer88gFzWO4+/jFQt4kkd/WE0All9M+c88PchEC8=
+github.com/TkMaxim9/EventOrganizationApp/proto v0.0.0-20250217164607-38f5ee922576 h1:076k/2fOCNq3D+iZG85qSz12dNFNAX0P5QdYy8N5E/k=
+github.com/TkMaxim9/EventOrganizationApp/proto v0.0.0-20250217164607-38f5ee922576/go.mod h1:sAZ99g44YOmuIlh2X3yIP8LES3jgurFMjN07mTO+Mzg=
+github.com/TkMaxim9/EventOrganizationApp/proto v0.0.0-20250217173252-428784ef2eca h1:bj884ygt2Slk70KwxBbJrN52lJ7SK5XPyfURnMeLsPI=
+github.com/TkMaxim9/EventOrganizationApp/proto v0.0.0-20250217173252-428784ef2eca/go.mod h1:sAZ99g44YOmuIlh2X3yIP8LES3jgurFMjN07mTO+Mzg=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -88,7 +90,7 @@ google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 h1:
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287/go.mod h1:8BS3B93F/U1juMFq9+EDk+qOT5CO1R9IzXxG3PTqiRk=
 google.golang.org/grpc v1.70.0 h1:pWFv03aZoHzlRKHWicjsZytKAiYCtNS0dHbXnIdq7jQ=
 google.golang.org/grpc v1.70.0/go.mod h1:ofIJqVKDXx/JiXrwr2IG4/zwdH9txy3IlF40RmcJSQw=
-google.golang.org/protobuf v1.36.4 h1:6A3ZDJHn/eNqc1i+IdefRzy/9PokBTPvcqMySR7NNIM=
-google.golang.org/protobuf v1.36.4/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
+google.golang.org/protobuf v1.36.5 h1:tPhr+woSbjfYvY6/GPufUoYizxw1cF/yFoxJ2fmpwlM=
+google.golang.org/protobuf v1.36.5/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
