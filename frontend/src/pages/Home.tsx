@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import EventCard, {EventCardProps} from "../components/EventCard";
 import {BACKEND_PATH} from "../../constants/constants.ts";
+import {Link} from "react-router-dom";
 
 
 const Home: React.FC = () => {
@@ -51,11 +52,17 @@ const Home: React.FC = () => {
     };
 
     return (
-        <div className="p-4">
+        <div className="p-4 pt-22 overflow-hidden main">
             <h2 className="text-2xl font-bold mb-4">Список мероприятий</h2>
 
+            <button className="w-full mb-4 hover:text-white">
+                <Link to="/create-event" className="no-blue-hover">
+                    + Создать мерприятие
+                </Link>
+            </button>
+
             {/* Форма поиска и фильтрации */}
-            <form onSubmit={handleSearch} className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <form onSubmit={handleSearch} className="mb-6 p-4 bg-gray-50/15 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label htmlFor="search" className="block mb-1 text-sm font-medium">
@@ -98,10 +105,10 @@ const Home: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-2 w-full">
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            className="flex-1 min-w-0 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 overflow-hidden text-ellipsis whitespace-nowrap"
                             disabled={loading}
                         >
                             {loading ? "Загрузка..." : "Найти"}
@@ -109,7 +116,7 @@ const Home: React.FC = () => {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                            className="flex-1 px-4 py-2 bg-gray-300 text-gray-400 rounded hover:bg-gray-400 overflow-hidden text-ellipsis whitespace-nowrap"
                             disabled={loading}
                         >
                             Сбросить
@@ -127,11 +134,11 @@ const Home: React.FC = () => {
 
             {/* Список мероприятий */}
             {!loading && events.length === 0 ? (
-                <div className="text-center py-4">
+                <div className="text-center py-4 bg-gray-50/15 rounded-lg">
                     Мероприятия не найдены
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50/15 rounded-lg">
                     {events.map((event) => (
                         <EventCard key={event.id} {...event} />
                     ))}

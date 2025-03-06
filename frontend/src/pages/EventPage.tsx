@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import useUserStore from "../store/UserStore.ts";
+import {BACKEND_PATH} from "../../constants/constants.ts";
 
 interface IEvent {
     id: number;
@@ -25,7 +26,7 @@ const EventPage: React.FC = () => {
         const fetchEvent = async () => {
             setLoading(true);
             try {
-                const response = await fetch(`/api/events/${id}`);
+                const response = await fetch(`${BACKEND_PATH}/api/events/${id}`);
 
                 if (!response.ok) {
                     throw new Error('Не удалось загрузить информацию о мероприятии');
@@ -52,7 +53,7 @@ const EventPage: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`/api/events/${id}/register`, {
+            const response = await fetch(`${BACKEND_PATH}/api/events/${id}/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ const EventPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
+            <div className="p-24 flex justify-center items-center min-h-screen">
                 <div className="text-center">
                     <div className="spinner-border text-primary" role="status">
                         <span className="sr-only">Загрузка...</span>
@@ -96,7 +97,7 @@ const EventPage: React.FC = () => {
 
     if (error || !event) {
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="p-24 container mx-auto px-4">
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                     <strong className="font-bold">Ошибка! </strong>
                     <span className="block sm:inline">{error || 'Мероприятие не найдено'}</span>
@@ -107,8 +108,8 @@ const EventPage: React.FC = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="p-24 container mx-auto px-4">
+            <div className="bg-gray-50/15 rounded-lg shadow-lg overflow-hidden">
                 {/* Изображение мероприятия */}
                 <div className="relative h-64 md:h-96">
                     <img
