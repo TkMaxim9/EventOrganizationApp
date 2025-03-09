@@ -3,19 +3,50 @@ package storage
 import "time"
 
 type Event struct {
-	ID          int64     `json:"id"`          // Поле `id` в таблице
-	Title       string    `json:"title"`       // Поле `title` в таблице
-	Description string    `json:"description"` // Поле `description` в таблице
-	StartTime   time.Time `json:"start_time"`  // Поле `start_time` в таблице
-	EndTime     time.Time `json:"end_time"`    // Поле `end_time` в таблице
-	CreatedAt   time.Time `json:"created_at"`  // Поле `created_at` в таблице
-	UserID      int64     `json:"user_id"`
+	EventID       int64     `json:"eventId"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	EventDate     time.Time `json:"eventDate"`
+	EventAddress  string    `json:"eventAddress"`
+	CreatorUserID int64     `json:"creatorUserId"`
+	VKLink        string    `json:"vkLink"`
+	TGLink        string    `json:"tgLink"`
+	ImageURL      string    `json:"imageUrl"`
 }
 
+// EventCreateDto представляет собой DTO для создания события
 type EventCreateDto struct {
-	Title       string    `json:"title"`       // Поле `title` в таблице
-	Description string    `json:"description"` // Поле `description` в таблице
-	StartTime   time.Time `json:"start_time"`  // Поле `start_time` в таблице
-	EndTime     time.Time `json:"end_time"`    // Поле `end_time` в таблице
-	UserID      int64     `json:"user_id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	EventDate     time.Time `json:"eventDate"`
+	EventAddress  string    `json:"eventAddress"`
+	CreatorUserID int64     `json:"creatorUserId"`
+	VKLink        string    `json:"vkLink"`
+	TGLink        string    `json:"tgLink"`
+	ImageURL      string    `json:"imageUrl"`
+}
+
+type EventCardProps struct {
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Date    string `json:"date"`
+	Address string `json:"address"`
+}
+
+type CrateUserDto struct {
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Pasword   string `json:"password"`
+}
+
+type UserInfo struct {
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
+type ProfileInfo struct {
+	User   UserInfo `json:"userInfo"`
+	Events []Event  `json:"events"`
 }

@@ -1,10 +1,3 @@
--- Удаление таблицы записей на мероприятия
-DROP TABLE IF EXISTS event_registrations;
-
--- Удаление таблицы мероприятий
-DROP TABLE IF EXISTS events;
-
--- Удаление таблицы пользователей
-DROP TABLE IF EXISTS users;
-
-
+DROP TABLE IF EXISTS `Registration`;
+DROP TABLE IF EXISTS `Event`;
+DROP TABLE IF EXISTS `User`;
