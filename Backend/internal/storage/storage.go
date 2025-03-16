@@ -38,6 +38,7 @@ type CrateUserDto struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Pasword   string `json:"password"`
+	ImageURL  string `json:"imageUrl"`
 }
 
 type UserInfo struct {

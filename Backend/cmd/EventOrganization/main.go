@@ -14,6 +14,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-chi/cors"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	vallib "github.com/go-playground/validator/v10"
@@ -71,6 +73,16 @@ func main() {
 
 	router := chi.NewRouter()
 
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // В продакшене лучше указать конкретный домен, например, "http://localhost:3000"
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Максимальное время кэширования (в секундах) для preflight запросов
+	})
+
+	router.Use(corsMiddleware.Handler)
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import useUserStore from "../store/UserStore.ts";
 
 const Header: React.FC = () => {
-    const { user } = useUserStore();
+    const { userId } = useUserStore();
 
     return (
 
@@ -14,7 +14,7 @@ const Header: React.FC = () => {
                         <h1 className="text-xl font-extrabold text-white">Event App</h1>
                     </Link>
                 </div>
-                {user ? (
+                {userId ? (
                     <Link to="/profile" className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md">
                         Профиль
                     </Link>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useUserStore from "../store/UserStore";
-import {BACKEND_PATH} from "../../constants/constants.ts";
+import {AUTH_PATH, BACKEND_PATH} from "../../constants/constants.ts";
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState("");
@@ -19,7 +19,7 @@ const Login: React.FC = () => {
 
         try {
             // Запрос к API для аутентификации
-            const response = await fetch(BACKEND_PATH + "/api/auth/login", {
+            const response = await fetch(AUTH_PATH + "/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -33,8 +33,11 @@ const Login: React.FC = () => {
                 throw new Error(data.message || "Ошибка при входе в систему");
             }
 
-            // Сохраняем данные пользователя и токен в store
-            login(data.user, data.token);
+            //Сохраняем данные пользователя и токен в store
+            login(data.user.id, data.token);
+            
+            
+            //login({id: 1, name: "Имя Фамилия", email:"email@example.com"}, "token")
 
             // Перенаправляем пользователя на главную страницу
             navigate("/");

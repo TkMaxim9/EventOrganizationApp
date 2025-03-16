@@ -11,44 +11,59 @@ const Home: React.FC = () => {
     const [addressFilter, setAddressFilter] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
 
-    const fetchEvents = () => {
+    const fetchEvents = (params : URLSearchParams) => {
         setLoading(true);
 
         // Построение URL с query параметрами
+    
+
+        const url = `${BACKEND_PATH}/events${params.toString() ? `?${params.toString()}` : ""}`;
+
+        //const url = "http://localhost:8082/events";
+        fetch(url)
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error("Не удалось загрузить мероприятия");
+        }
+        return response.json();
+    })
+    .then((data) => {
+        if (data.eventCards && data.eventCards.length > 0) {
+            setEvents(data.eventCards);
+        }
+        else{
+            setEvents([])
+        }
+    })
+    .catch(e => console.error(e))
+    .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        console.log("hello");
         const queryParams = new URLSearchParams();
         if (searchTerm) queryParams.append("search", searchTerm);
         if (dateFilter) queryParams.append("date", dateFilter);
         if (addressFilter) queryParams.append("address", addressFilter);
-
-        const url = `${BACKEND_PATH}/api/events${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-
-        fetch(url)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Не удалось загрузить мероприятия");
-                }
-                return response.json();
-            })
-            .then((data) => setEvents(data))
-            .catch(e => console.error(e))
-            .finally(() => setLoading(false));
-    };
-
-    useEffect(() => {
-        fetchEvents();
-    }, []); // Загрузка при первом рендере
+        fetchEvents(queryParams);
+    }, []); 
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        fetchEvents();
+        const queryParams = new URLSearchParams();
+        if (searchTerm) queryParams.append("search", searchTerm);
+        if (dateFilter) queryParams.append("date", dateFilter);
+        if (addressFilter) queryParams.append("address", addressFilter);
+        fetchEvents(queryParams);
     };
 
     const clearFilters = () => {
         setSearchTerm("");
         setDateFilter("");
         setAddressFilter("");
+        const queryParams = new URLSearchParams();
         // После очистки сразу загружаем все события
-        setTimeout(fetchEvents, 0);
+        fetchEvents(queryParams);
     };
 
     return (
@@ -108,7 +123,7 @@ const Home: React.FC = () => {
                     <div className="flex items-end gap-2 w-full">
                         <button
                             type="submit"
-                            className="flex-1 min-w-0 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="!text-xs !h-full flex-1 min-w-0 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 overflow-hidden text-ellipsis whitespace-nowrap"
                             disabled={loading}
                         >
                             {loading ? "Загрузка..." : "Найти"}
@@ -116,10 +131,10 @@ const Home: React.FC = () => {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="flex-1 px-4 py-2 bg-gray-300 text-gray-400 rounded hover:bg-gray-400 overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="!text-xs !h-full flex-1 px-4 py-2 bg-gray-300 text-gray-400 rounded hover:bg-gray-400 overflow-hidden text-ellipsis whitespace-nowrap"
                             disabled={loading}
                         >
-                            Сбросить
+                            Сброс
                         </button>
                     </div>
                 </div>
@@ -138,7 +153,7 @@ const Home: React.FC = () => {
                     Мероприятия не найдены
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50/15 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50/15 rounded-lg p-10">
                     {events.map((event) => (
                         <EventCard key={event.id} {...event} />
                     ))}

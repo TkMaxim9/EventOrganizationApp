@@ -1,28 +1,33 @@
 import React, { useState } from 'react';
+import { BACKEND_PATH } from '../../constants/constants';
+import useUserStore from '../store/UserStore';
+import { useNavigate } from 'react-router-dom';
 
 interface IEvent {
-    name: string;
+    title: string;
     description: string;
-    date: string;
-    address: string;
-    linkVK: string;
-    linkTG: string;
-    imageSrc: string;
+    eventDate: string;
+    eventAddress: string;
+    vkLink: string;
+    tgLink: string;
+    imageUrl: string;
 }
 
 const CreateEvent: React.FC = () => {
     const [event, setEvent] = useState<IEvent>({
-        name: '',
+        title: '',
         description: '',
-        date: '',
-        address: '',
-        linkVK: '',
-        linkTG: '',
-        imageSrc: ''
+        eventDate: '',
+        eventAddress: '',
+        vkLink: '',
+        tgLink: '',
+        imageUrl: ''
     });
 
     const [errors, setErrors] = useState<Partial<Record<keyof IEvent, string>>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const userId = useUserStore((state) => state.userId);
+    const navigate = useNavigate();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -43,20 +48,20 @@ const CreateEvent: React.FC = () => {
     const validateForm = (): boolean => {
         const newErrors: Partial<Record<keyof IEvent, string>> = {};
 
-        if (!event.name.trim()) {
-            newErrors.name = 'Название мероприятия обязательно';
+        if (!event.title.trim()) {
+            newErrors.title = 'Название мероприятия обязательно';
         }
 
         if (!event.description.trim()) {
             newErrors.description = 'Описание мероприятия обязательно';
         }
 
-        if (!event.date.trim()) {
-            newErrors.date = 'Дата мероприятия обязательна';
+        if (!event.eventDate.trim()) {
+            newErrors.eventDate = 'Дата мероприятия обязательна';
         }
 
-        if (!event.address.trim()) {
-            newErrors.address = 'Адрес мероприятия обязателен';
+        if (!event.eventAddress.trim()) {
+            newErrors.eventAddress = 'Адрес мероприятия обязателен';
         }
 
         setErrors(newErrors);
@@ -65,39 +70,72 @@ const CreateEvent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+    
         if (!validateForm()) {
             return;
         }
-
+    
         setIsSubmitting(true);
-
+    
         try {
-            // Здесь будет логика отправки данных на сервер
-            console.log('Отправка данных мероприятия:', event);
+            const creatorUserID = userId;
 
-            // Имитация задержки API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Сброс формы после успешной отправки
-            setEvent({
-                name: '',
-                description: '',
-                date: '',
-                address: '',
-                linkVK: '',
-                linkTG: '',
-                imageSrc: ''
+            if (!creatorUserID) {
+                navigate("/login");
+                setIsSubmitting(false);
+                return;
+            }
+    
+            const eventData = {
+                ...event,
+                eventDate: new Date(event.eventDate).toISOString(),
+                creatorUserID: creatorUserID, // Добавляем ID из хранилища
+            };
+    
+            const formData = new FormData();
+            formData.append("event", JSON.stringify(eventData));
+    
+            console.log("here")
+            if (event.imageUrl && document.getElementById("image") instanceof HTMLInputElement) {
+                const fileInput = document.getElementById("image") as HTMLInputElement;
+                console.log("here")
+                console.log(fileInput.files?.length)
+                if (fileInput.files && fileInput.files[0]) {
+                    formData.append("image", fileInput.files[0]);
+                }
+            }
+    
+            const response = await fetch(BACKEND_PATH + "/event", {
+                method: "POST",
+                body: formData,
             });
-
-            alert('Мероприятие успешно создано!');
+    
+            const result = await response.json();
+    
+            if (!response.ok) {
+                throw new Error(result.message || "Ошибка при создании мероприятия");
+            }
+    
+            setEvent({
+                title: "",
+                description: "",
+                eventDate: "",
+                eventAddress: "",
+                vkLink: "",
+                tgLink: "",
+                imageUrl: "",
+            });
+    
+            alert("Мероприятие успешно создано!");
         } catch (error) {
-            console.error('Ошибка при создании мероприятия:', error);
-            alert('Произошла ошибка при создании мероприятия. Пожалуйста, попробуйте снова.');
+            console.error("Ошибка при создании мероприятия:", error);
+            alert("Произошла ошибка при создании мероприятия. Пожалуйста, попробуйте снова.");
         } finally {
             setIsSubmitting(false);
         }
     };
+    
+    
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -107,7 +145,7 @@ const CreateEvent: React.FC = () => {
             const imageUrl = URL.createObjectURL(file);
             setEvent(prev => ({
                 ...prev,
-                imageSrc: imageUrl
+                imageUrl: imageUrl
             }));
         }
     };
@@ -124,14 +162,14 @@ const CreateEvent: React.FC = () => {
                         </label>
                         <input
                             type="text"
-                            id="name"
-                            name="name"
-                            value={event.name}
+                            id="title"
+                            name="title"
+                            value={event.title}
                             onChange={handleChange}
-                            className={`w-full px-3 py-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.title ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="Введите название мероприятия"
                         />
-                        {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                        {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
                     </div>
 
                     <div>
@@ -156,13 +194,13 @@ const CreateEvent: React.FC = () => {
                         </label>
                         <input
                             type="datetime-local"
-                            id="date"
-                            name="date"
-                            value={event.date}
+                            id="eventDate"
+                            name="eventDate"
+                            value={event.eventDate}
                             onChange={handleChange}
-                            className={`w-full px-3 py-2 border rounded-md ${errors.date ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.eventDate ? 'border-red-500' : 'border-gray-300'}`}
                         />
-                        {errors.date && <p className="mt-1 text-sm text-red-500">{errors.date}</p>}
+                        {errors.eventDate && <p className="mt-1 text-sm text-red-500">{errors.eventDate}</p>}
                     </div>
 
                     <div>
@@ -171,14 +209,14 @@ const CreateEvent: React.FC = () => {
                         </label>
                         <input
                             type="text"
-                            id="address"
-                            name="address"
-                            value={event.address}
+                            id="eventAddress"
+                            name="eventAddress"
+                            value={event.eventAddress}
                             onChange={handleChange}
-                            className={`w-full px-3 py-2 border rounded-md ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full px-3 py-2 border rounded-md ${errors.eventAddress ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="Введите адрес проведения"
                         />
-                        {errors.address && <p className="mt-1 text-sm text-red-500">{errors.address}</p>}
+                        {errors.eventAddress && <p className="mt-1 text-sm text-red-500">{errors.eventAddress}</p>}
                     </div>
 
                     <div>
@@ -187,9 +225,9 @@ const CreateEvent: React.FC = () => {
                         </label>
                         <input
                             type="url"
-                            id="linkVK"
-                            name="linkVK"
-                            value={event.linkVK}
+                            id="vkLink"
+                            name="vkLink"
+                            value={event.vkLink}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             placeholder="https://vk.com/..."
@@ -202,9 +240,9 @@ const CreateEvent: React.FC = () => {
                         </label>
                         <input
                             type="url"
-                            id="linkTG"
-                            name="linkTG"
-                            value={event.linkTG}
+                            id="tgLink"
+                            name="tgLink"
+                            value={event.tgLink}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             placeholder="https://t.me/..."
@@ -222,10 +260,10 @@ const CreateEvent: React.FC = () => {
                             onChange={handleImageChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer"
                         />
-                        {event.imageSrc && (
+                        {event.imageUrl && (
                             <div className="mt-2">
                                 <img
-                                    src={event.imageSrc}
+                                    src={event.imageUrl}
                                     alt="Превью"
                                     className="h-32 object-cover rounded-md"
                                 />

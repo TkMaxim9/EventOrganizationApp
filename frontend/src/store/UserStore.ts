@@ -1,34 +1,28 @@
 import { create } from "zustand";
 
-interface IUser {
-    id: number;
-    name: string;
-    email: string;
-}
-
 interface StoreState {
     token: string | null;
-    user: IUser | null;
-    login: (user: IUser, token: string) => void;
+    userId: number | null;
+    login: (userId: number, token: string) => void;
     logout: () => void;
 }
 
 const useUserStore = create<StoreState>((set) => {
     const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const storedUserId = localStorage.getItem("userId");
 
     return {
         token: storedToken || null,
-        user: storedUser ? JSON.parse(storedUser) : null,
-        login: (user, token) => {
+        userId: storedUserId ? Number(storedUserId) : null,
+        login: (userId, token) => {
             localStorage.setItem("token", token);
-            localStorage.setItem("user", JSON.stringify(user));
-            set({ user, token });
+            localStorage.setItem("userId", userId.toString());
+            set({ userId, token });
         },
         logout: () => {
             localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            set({ user: null, token: null });
+            localStorage.removeItem("userId");
+            set({ userId: null, token: null });
         },
     };
 });

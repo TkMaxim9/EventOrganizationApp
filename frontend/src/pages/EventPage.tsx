@@ -3,15 +3,15 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import useUserStore from "../store/UserStore.ts";
 import {BACKEND_PATH} from "../../constants/constants.ts";
 
-interface IEvent {
-    id: number;
-    name: string;
+export interface IEvent {
+    eventId: number;
+    title: string;
     description: string;
-    date: string;
-    address: string;
-    linkVK: string;
-    linkTG: string;
-    imageSrc: string;
+    eventDate: string;
+    eventAddress: string;
+    vkLink: string;
+    tgLink: string;
+    imageUrl: string;
 }
 
 const EventPage: React.FC = () => {
@@ -21,19 +21,22 @@ const EventPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const { token } = useUserStore();
     const navigate = useNavigate();
+    const userId = useUserStore((state) => state.userId);
 
     useEffect(() => {
+        console.log("hello lit")
         const fetchEvent = async () => {
             setLoading(true);
             try {
-                const response = await fetch(`${BACKEND_PATH}/api/events/${id}`);
+                const response = await fetch(`${BACKEND_PATH}/event/${id}`);
 
                 if (!response.ok) {
                     throw new Error('Не удалось загрузить информацию о мероприятии');
                 }
 
                 const data = await response.json();
-                setEvent(data);
+                console.log(data.event)
+                setEvent(data.event);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Произошла ошибка при загрузке мероприятия');
             } finally {
@@ -53,12 +56,16 @@ const EventPage: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`${BACKEND_PATH}/api/events/${id}/register`, {
+            const response = await fetch(`${BACKEND_PATH}/participate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                body: JSON.stringify({
+                    eventId: Number(id), 
+                    userId: userId ? userId : 1
+                })
             });
 
             if (!response.ok) {
@@ -111,41 +118,43 @@ const EventPage: React.FC = () => {
         <div className="p-24 container mx-auto px-4">
             <div className="bg-gray-50/15 rounded-lg shadow-lg overflow-hidden">
                 {/* Изображение мероприятия */}
+                {event.imageUrl ? (
                 <div className="relative h-64 md:h-96">
                     <img
-                        src={event.imageSrc || '/placeholder-event.jpg'}
-                        alt={event.name}
+                        src={BACKEND_PATH + event.imageUrl}
+                        alt={event.title}
                         className="w-full h-full object-cover"
                     />
                 </div>
+            ) : null}
 
                 {/* Информация о мероприятии */}
                 <div className="p-6">
                     <div className="flex justify-between items-start flex-wrap">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.name}</h1>
-                            <div className="flex flex-wrap items-center text-gray-600 mb-4">
+                            <h1 className="text-3xl font-bold text-gray-100 mb-2">{event.title}</h1>
+                            <div className="flex flex-wrap items-center text-gray-100 mb-4">
                                 <div className="mr-6 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    {formatDate(event.date)}
+                                    {formatDate(event.eventDate)}
                                 </div>
                                 <div className="mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    {event.address}
+                                    {event.eventAddress}
                                 </div>
                             </div>
                         </div>
 
                         {/* Социальные сети */}
                         <div className="flex space-x-3">
-                            {event.linkVK && (
+                            {event.vkLink && (
                                 <a
-                                    href={event.linkVK}
+                                    href={event.vkLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
@@ -155,9 +164,9 @@ const EventPage: React.FC = () => {
                                     </svg>
                                 </a>
                             )}
-                            {event.linkTG && (
+                            {event.tgLink && (
                                 <a
-                                    href={event.linkTG}
+                                    href={event.tgLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"

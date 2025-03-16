@@ -24,6 +24,7 @@ require (
 	github.com/TkMaxim9/EventOrganizationApp/proto v0.0.0-20250217173252-428784ef2eca
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
+	github.com/go-chi/cors v1.2.1
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

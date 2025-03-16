@@ -13,6 +13,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-chi/cors"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/go-sql-driver/mysql"
@@ -26,6 +28,11 @@ type User struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
 	Password string `json:"password"` // Stored as hash
+}
+
+type UserRes struct {
+	ID    int    `json:"id"`
+	Email string `json:"email"` // Stored as hash
 }
 
 // LoginRequest represents the login request payload
@@ -42,8 +49,9 @@ type UserCreatedEvent struct {
 
 // JWTResponse represents the JWT token response
 type JWTResponse struct {
-	Token   string `json:"token"`
-	Expires string `json:"expires"`
+	Token   string  `json:"token"`
+	Expires string  `json:"expires"`
+	User    UserRes `json:"user"`
 }
 
 // Global variables
@@ -81,6 +89,17 @@ func main() {
 
 	// Set up HTTP server with Chi router
 	r := chi.NewRouter()
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // В продакшене лучше указать конкретный домен, например, "http://localhost:3000"
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Максимальное время кэширования (в секундах) для preflight запросов
+	})
+
+	r.Use(corsMiddleware.Handler)
+
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
@@ -102,6 +121,8 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+	log.Printf(loginReq.Email)
+	log.Printf(loginReq.Password)
 
 	// Check if user exists and password is correct
 	user, err := authenticateUser(loginReq.Email, loginReq.Password)
@@ -122,6 +143,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(JWTResponse{
 		Token:   token,
 		Expires: expiresAt.Format(time.RFC3339),
+		User:    UserRes{ID: user.ID, Email: user.Email},
 	})
 }
 
@@ -131,7 +153,7 @@ func authenticateUser(email, password string) (*User, error) {
 	var passwordHash string
 
 	// Query the database for the user
-	err := db.QueryRow("SELECT id, email, password_hash FROM users WHERE email = $1", email).Scan(
+	err := db.QueryRow("SELECT id, email, password_hash FROM users WHERE email = ?", email).Scan(
 		&user.ID, &user.Email, &passwordHash,
 	)
 	if err != nil {
