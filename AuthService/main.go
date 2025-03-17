@@ -121,8 +121,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-	log.Printf(loginReq.Email)
-	log.Printf(loginReq.Password)
 
 	// Check if user exists and password is correct
 	user, err := authenticateUser(loginReq.Email, loginReq.Password)
@@ -197,8 +195,8 @@ func generateJWT(user *User) (string, time.Time, error) {
 // 		Brokers:  []string{kafkaBroker},
 // 		Topic:    kafkaTopic,
 // 		GroupID:  "auth-service",
-// 		MinBytes: 10e3, // 10KB
-// 		MaxBytes: 10e6, // 10MB
+// 		MinBytes: 10e3,
+// 		MaxBytes: 10e6,
 // 	})
 // 	defer reader.Close()
 

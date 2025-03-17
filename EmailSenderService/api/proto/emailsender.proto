@@ -17,7 +17,7 @@ service NotificationService {
 message CreateNotificationRequest {
   string user_email = 1;  // Email пользователя
   string event_name = 2;  // Название мероприятия
-  int64 event_time = 3;   // Время события (в формате Unix timestamp)
+  int64 event_time = 3;   // Время события
 }
 
 // Ответ после создания уведомления
