@@ -17,6 +17,7 @@ CREATE TABLE `Event` (
     `TGLink` VARCHAR(255),
     `ImageURL` VARCHAR(255),
     FOREIGN KEY (`CreatorUserID`) REFERENCES `User`(`UserID`) ON DELETE CASCADE
+    UNIQUE KEY `uniq_event` (`Title`, `EventDate`, `CreatorUserID`)
 );
 
 CREATE TABLE `Registration` (

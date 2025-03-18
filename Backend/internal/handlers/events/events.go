@@ -1,23 +1,27 @@
 package events
 
 import (
-	// emailsendergrpc "Backend/internal/clients/emailsender/grpc"
+	emailsendergrpc "Backend/internal/clients/emailsender/grpc"
 	"Backend/internal/lib/response"
 	"Backend/internal/storage"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
+	"github.com/segmentio/kafka-go"
 )
 
 const (
@@ -55,8 +59,51 @@ type EventStorage interface {
 	EditEvent(eventId int64, dto storage.EventCreateDto) error
 	GetEvent(eventId int) (storage.Event, error)
 	DeleteEvent(eventID int) error
-	RegisterUserForEvent(userId int, eventId int) error
+	RegisterUserForEvent(userId int, eventId int) (userEmail string, eventName string, err error)
 	GetFilteredEvents(title, date, address string) ([]storage.Event, error)
+}
+
+type UserCreatedEvent struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+var (
+	kafkaTopic  = "user-created"
+	kafkaBroker = "localhost:9092"
+)
+
+func publishUserCreatedEvent(email, password string) error {
+	// Создаем объект события
+	event := UserCreatedEvent{
+		Email:    email,
+		Password: password,
+	}
+
+	// Сериализуем событие в JSON
+	eventData, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	// Создаем Kafka writer с фиксированными значениями
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  []string{kafkaBroker},
+		Topic:    kafkaTopic,
+		Balancer: &kafka.LeastBytes{},
+	})
+	defer writer.Close()
+
+	// Отправляем сообщение в Kafka
+	err = writer.WriteMessages(context.Background(), kafka.Message{
+		Value: eventData,
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("UserCreatedEvent отправлено в Kafka: %s", email)
+	return nil
 }
 
 func eventValidator(fl validator.FieldLevel) bool {
@@ -334,7 +381,7 @@ func GetEventsHandler(log *slog.Logger, eventStorage EventStorage, validate *val
 	}
 }
 
-func RegisterUserForEventHandler(log *slog.Logger, eventStorage EventStorage, validate *validator.Validate) http.HandlerFunc {
+func RegisterUserForEventHandler(log *slog.Logger, eventStorage EventStorage, validate *validator.Validate, emailClient *emailsendergrpc.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.events.RegisterUserForEvent"
 
@@ -357,11 +404,27 @@ func RegisterUserForEventHandler(log *slog.Logger, eventStorage EventStorage, va
 		}
 
 		// Вызываем метод RegisterUserForEvent для регистрации пользователя
-		err := eventStorage.RegisterUserForEvent(req.UserID, req.EventID)
+		userEmail, eventName, err := eventStorage.RegisterUserForEvent(req.UserID, req.EventID)
 		if err != nil {
 			log.Error(op, "failed to register user for event", err)
 			render.JSON(w, r, response.Error("не удалось зарегистрировать пользователя на мероприятие"))
 			return
+		}
+
+		if emailClient != nil {
+			// Создаем контекст с таймаутом для запроса
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			eventTime := time.Now().Add(2*time.Hour + 3*time.Minute).Unix()
+
+			notificationIDs, err := emailClient.CreateNotification(ctx, userEmail, eventName, eventTime)
+			if err != nil {
+				log.Error("Ошибка при создании уведомления", slog.Any("error", err))
+				os.Exit(1)
+			}
+			log.Info("Уведомления успешно созданы", slog.Any("notification_ids", notificationIDs))
+
 		}
 
 		// Возвращаем успешный ответ с ID регистрации
@@ -530,13 +593,13 @@ func GetEventPageHandler(log *slog.Logger, eventStorage EventStorage, validate *
 	}
 }
 
-func Init(router *chi.Mux, log *slog.Logger, eventStorage EventStorage, validate *validator.Validate) {
+func Init(router *chi.Mux, log *slog.Logger, eventStorage EventStorage, validate *validator.Validate, emailClient *emailsendergrpc.Client) {
 	router.Post("/event", CreateEventHandler(log, eventStorage, validate))
 	router.Get("/events", GetEventsHandler(log, eventStorage, validate))
 	router.Get("/event/{id}", GetEventPageHandler(log, eventStorage, validate))
 	router.Put("/event/{id}", UpdateEventHandler(log, eventStorage, validate))
 	router.Delete("/event/{id}", DeleteEventHandler(log, eventStorage, validate))
-	router.Post("/participate", RegisterUserForEventHandler(log, eventStorage, validate))
+	router.Post("/participate", RegisterUserForEventHandler(log, eventStorage, validate, emailClient))
 	router.Post("/register", AddUserHandler(log, eventStorage, validate))
 	router.Get("/profile/{id}", GetProfileInfoHandler(log, eventStorage, validate))
 

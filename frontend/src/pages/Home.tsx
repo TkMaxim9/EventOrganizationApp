@@ -13,13 +13,9 @@ const Home: React.FC = () => {
 
     const fetchEvents = (params : URLSearchParams) => {
         setLoading(true);
-
-        // Построение URL с query параметрами
     
-
         const url = `${BACKEND_PATH}/events${params.toString() ? `?${params.toString()}` : ""}`;
 
-        //const url = "http://localhost:8082/events";
         fetch(url)
     .then((response) => {
         if (!response.ok) {

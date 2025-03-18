@@ -13,6 +13,8 @@ require (
 
 require (
 	github.com/go-chi/chi/v5 v5.2.1 // indirect
+	github.com/klauspost/compress v1.15.11 // indirect
+	github.com/pierrec/lz4/v4 v4.1.16 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241202173237-19429a94021a // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
@@ -31,6 +33,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/segmentio/kafka-go v0.4.47
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/net v0.34.0 // indirect

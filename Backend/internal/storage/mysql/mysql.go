@@ -271,29 +271,28 @@ func (s *Storage) AddUser(dto storage.CrateUserDto) (int64, error) {
 }
 
 // RegisterUserForEvent регистрирует пользователя на мероприятие.
-func (s *Storage) RegisterUserForEvent(userId int, eventId int) error {
+func (s *Storage) RegisterUserForEvent(userId int, eventId int) (userEmail string, eventName string, err error) {
 	const op = "storage.RegisterUserForEvent"
 
-	// Подготовка SQL-запроса для регистрации пользователя на мероприятие
-	stmt, err := s.db.Prepare("INSERT INTO Registration (UserID, EventID) VALUES (?, ?)")
+	// Регистрируем пользователя на мероприятие
+	_, err = s.db.Exec("INSERT INTO Registration (UserID, EventID) VALUES (?, ?)", userId, eventId)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	defer stmt.Close()
-
-	// Выполнение запроса
-	res, err := stmt.Exec(userId, eventId)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Получаем ID последней регистрации
-	_, err = res.LastInsertId()
+	// Получаем email пользователя
+	err = s.db.QueryRow("SELECT Email FROM Users WHERE ID = ?", userId).Scan(&userEmail)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: failed to fetch user email: %w", op, err)
 	}
 
-	return nil
+	// Получаем название события
+	err = s.db.QueryRow("SELECT Title FROM Events WHERE ID = ?", eventId).Scan(&eventName)
+	if err != nil {
+		return "", "", fmt.Errorf("%s: failed to fetch event name: %w", op, err)
+	}
+
+	return userEmail, eventName, nil
 }
 
 func (r *Storage) GetUserInfo(userId int) (storage.UserInfo, error) {

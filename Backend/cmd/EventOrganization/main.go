@@ -7,12 +7,10 @@ import (
 	"Backend/internal/lib/logger/sl"
 	"Backend/internal/lib/validator"
 	"Backend/internal/storage/mysql"
-	"context"
 	"log/slog"
 	_ "log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/go-chi/cors"
 
@@ -55,21 +53,6 @@ func main() {
 	if err != nil {
 		log.Error("Ошибка при подключении к сервису отправки уведомлений: %v", err)
 	}
-	// Создание контекста с таймаутом
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
-	// Вызов метода CreateNotification
-	userEmail := "dogwok24@gmail.com"
-	eventName := "Cristiano Analdu"
-	eventTime := time.Now().Add(2*time.Hour + 3*time.Minute).Unix() // Текущее время в формате Unix timestamp
-
-	notificationIDs, err := emailsenderclient.CreateNotification(ctx, userEmail, eventName, eventTime)
-	if err != nil {
-		log.Error("Ошибка при создании уведомления", slog.Any("error", err))
-		os.Exit(1)
-	}
-	log.Info("Уведомления успешно созданы", slog.Any("notification_ids", notificationIDs))
 
 	router := chi.NewRouter()
 
@@ -89,7 +72,7 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	events.Init(router, log, storage, validate)
+	events.Init(router, log, storage, validate, emailsenderclient)
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
