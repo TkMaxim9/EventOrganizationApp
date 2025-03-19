@@ -4,6 +4,7 @@ import (
 	"Backend/internal/storage"
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
@@ -184,9 +185,11 @@ func (r *Storage) GetEvent(eventId int) (storage.Event, error) {
 }
 
 func (r *Storage) GetFilteredEvents(title, date, address string) ([]storage.Event, error) {
-	query := `SELECT e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress, e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL
-              FROM Event e
-              WHERE 1=1`
+	query := `SELECT e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress, e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL,
+               COUNT(er.UserID) as UsersCount
+               FROM event e
+               LEFT JOIN registration er ON e.EventID = er.EventID
+               WHERE 1=1`
 
 	args := []interface{}{}
 
@@ -202,12 +205,14 @@ func (r *Storage) GetFilteredEvents(title, date, address string) ([]storage.Even
 		args = append(args, date)
 	}
 
-	// Предполагаем, что адрес находится в поле Description
-	// Если у вас есть другое поле для адреса, используйте его здесь
+	// Фильтрация по адресу
 	if address != "" {
 		query += " AND e.EventAddress LIKE ?"
 		args = append(args, "%"+address+"%")
 	}
+
+	// Добавляем GROUP BY, так как используем агрегатную функцию COUNT
+	query += " GROUP BY e.EventID"
 
 	// Сортируем по дате, чтобы сначала показывались ближайшие события
 	query += " ORDER BY e.EventDate ASC"
@@ -221,6 +226,7 @@ func (r *Storage) GetFilteredEvents(title, date, address string) ([]storage.Even
 	var events []storage.Event
 	for rows.Next() {
 		var e storage.Event
+		var UsersCount int
 		err := rows.Scan(
 			&e.EventID,
 			&e.Title,
@@ -231,10 +237,12 @@ func (r *Storage) GetFilteredEvents(title, date, address string) ([]storage.Even
 			&e.VKLink,
 			&e.TGLink,
 			&e.ImageURL,
+			&UsersCount,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("mysql.GetFilteredEvents - row scanning error: %w", err)
 		}
+		e.UsersCount = UsersCount
 		events = append(events, e)
 	}
 
@@ -281,13 +289,13 @@ func (s *Storage) RegisterUserForEvent(userId int, eventId int) (userEmail strin
 	}
 
 	// Получаем email пользователя
-	err = s.db.QueryRow("SELECT Email FROM Users WHERE ID = ?", userId).Scan(&userEmail)
+	err = s.db.QueryRow("SELECT Email FROM user WHERE ID = ?", userId).Scan(&userEmail)
 	if err != nil {
 		return "", "", fmt.Errorf("%s: failed to fetch user email: %w", op, err)
 	}
 
 	// Получаем название события
-	err = s.db.QueryRow("SELECT Title FROM Events WHERE ID = ?", eventId).Scan(&eventName)
+	err = s.db.QueryRow("SELECT Title FROM event WHERE ID = ?", eventId).Scan(&eventName)
 	if err != nil {
 		return "", "", fmt.Errorf("%s: failed to fetch event name: %w", op, err)
 	}
@@ -296,30 +304,35 @@ func (s *Storage) RegisterUserForEvent(userId int, eventId int) (userEmail strin
 }
 
 func (r *Storage) GetUserInfo(userId int) (storage.UserInfo, error) {
-	query := `SELECT u.Email, u.FirstName, u.LastName 
+	query := `SELECT u.Email, u.FirstName, u.LastName , u.ImageUrl
 	          FROM User u 
 	          WHERE u.UserID = ?`
 
 	row := r.db.QueryRow(query, userId)
 
 	var userInfo storage.UserInfo
-	err := row.Scan(&userInfo.Email, &userInfo.FirstName, &userInfo.LastName)
+	err := row.Scan(&userInfo.Email, &userInfo.FirstName, &userInfo.LastName, &userInfo.ImageUrl)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return storage.UserInfo{}, fmt.Errorf("mysql.GetUserInfo - user with ID %d not found", userId)
 		}
 		return storage.UserInfo{}, fmt.Errorf("mysql.GetUserInfo - row scanning error: %w", err)
 	}
+	log.Printf("UserInfo: %+v", userInfo)
 
 	return userInfo, nil
 }
 
 func (r *Storage) GetEventsByUser(userId int) ([]storage.Event, error) {
-	query := `SELECT e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress, 
-                 e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL
-          FROM Event e 
-          WHERE e.CreatorUserID = ? 
-          ORDER BY e.EventDate ASC`
+	query := `SELECT e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress,
+                   e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL,
+                   COALESCE(COUNT(DISTINCT er.UserID), 0) as UsersCount
+           FROM Event e
+           LEFT JOIN registration er ON e.EventID = er.EventID
+           WHERE e.CreatorUserID = ?
+           GROUP BY e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress,
+                   e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL
+           ORDER BY e.EventDate ASC`
 
 	rows, err := r.db.Query(query, userId)
 	if err != nil {
@@ -340,6 +353,7 @@ func (r *Storage) GetEventsByUser(userId int) ([]storage.Event, error) {
 			&e.VKLink,
 			&e.TGLink,
 			&e.ImageURL,
+			&e.UsersCount,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("mysql.GetEventsByUser - row scanning error: %w", err)
@@ -352,4 +366,36 @@ func (r *Storage) GetEventsByUser(userId int) ([]storage.Event, error) {
 	}
 
 	return events, nil
+}
+
+func (r *Storage) GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, error) {
+	query := `SELECT u.Email, u.FirstName, u.LastName, u.ImageUrl
+              FROM User u
+              JOIN Registration reg ON u.UserID = reg.UserID
+              WHERE reg.EventID = ?`
+
+	rows, err := r.db.Query(query, eventId)
+	if err != nil {
+		return nil, fmt.Errorf("mysql.GetEventRegisteredUsers - query error: %w", err)
+	}
+	defer rows.Close()
+
+	var users []storage.UserInfo
+
+	for rows.Next() {
+		var user storage.UserInfo
+		err := rows.Scan(&user.Email, &user.FirstName, &user.LastName, &user.ImageUrl)
+		if err != nil {
+			return nil, fmt.Errorf("mysql.GetEventRegisteredUsers - row scanning error: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("mysql.GetEventRegisteredUsers - rows iteration error: %w", err)
+	}
+
+	log.Printf("Found %d registered users for event ID %d", len(users), eventId)
+
+	return users, nil
 }

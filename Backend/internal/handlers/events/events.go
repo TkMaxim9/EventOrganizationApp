@@ -40,6 +40,7 @@ type Response struct {
 	EventId     int64                    `json:"eventId,omitempty"`
 	UserId      int64                    `json:"userId,omitempty"`
 	ProfileInfo storage.ProfileInfo      `json:"profileInfo,omitempty"`
+	Users       []storage.UserInfo       `json:"users,omitempty"`
 }
 
 type RegisterRequest struct {
@@ -61,6 +62,7 @@ type EventStorage interface {
 	DeleteEvent(eventID int) error
 	RegisterUserForEvent(userId int, eventId int) (userEmail string, eventName string, err error)
 	GetFilteredEvents(title, date, address string) ([]storage.Event, error)
+	GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, error)
 }
 
 type UserCreatedEvent struct {
@@ -370,10 +372,11 @@ func GetEventsHandler(log *slog.Logger, eventStorage EventStorage, validate *val
 			address := event.EventAddress
 
 			eventCards = append(eventCards, storage.EventCardProps{
-				ID:      event.EventID,
-				Name:    event.Title,
-				Date:    dateStr,
-				Address: address,
+				ID:         event.EventID,
+				Name:       event.Title,
+				Date:       dateStr,
+				Address:    address,
+				UsersCount: event.UsersCount,
 			})
 		}
 
@@ -497,7 +500,7 @@ func AddUserHandler(log *slog.Logger, eventStorage EventStorage, validate *valid
 			filename := generateRandomFilename(fileHeader.Filename)
 
 			// Полный путь к файлу
-			filePath := filepath.Join(uploadDir, filename)
+			filePath := filepath.Join(uploadAvatarDir, filename)
 
 			// Создаем файл
 			dst, err := os.Create(filePath)
@@ -585,9 +588,17 @@ func GetEventPageHandler(log *slog.Logger, eventStorage EventStorage, validate *
 			return
 		}
 
+		users, err := eventStorage.GetEventRegisteredUsers(idInt)
+		if err != nil {
+			log.Error(op, "failed to get reg users", err)
+			render.JSON(w, r, response.Error("не удалось получить зарег пользователей"))
+			return
+		}
+
 		render.JSON(w, r, Response{
 			Response: response.OK(),
 			Event:    event,
+			Users:    users,
 		})
 
 	}

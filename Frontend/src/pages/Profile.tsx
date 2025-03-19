@@ -5,10 +5,11 @@ import useUserStore from "../store/UserStore.ts";
 import { IEvent } from "./EventPage"
 import { redirect, useNavigate } from "react-router-dom";
 
-interface IUserInfo {
+export interface IUserInfo {
     firstName: string;
     lastName: string;
     email: string;
+    imageUrl: string | null;
 }
 
 interface IProfile {
@@ -60,16 +61,39 @@ const Profile: React.FC = () => {
                     {/* Блок с информацией о пользователе */}
                     <div className="bg-white p-6 rounded-lg shadow-md mb-6 text-gray-700">
                         <h2 className="text-2xl font-bold mb-4">Профиль пользователя</h2>
-                        <div className="space-y-2">
-                            <p className="text-lg">
-                                <span className="font-semibold">Имя:</span> {profileData.userInfo.firstName} {profileData.userInfo.lastName}
-                            </p>
-                            <p className="text-lg">
-                                <span className="font-semibold">Email:</span> {profileData.userInfo.email}
-                            </p>
-                            <button className="!text-white" onClick={() => handleSubmit()}>
-                                Выйти
-                            </button>
+                        <div className="flex items-start gap-6">
+                            {/* Блок с изображением пользователя */}
+                            <div className="flex-shrink-0">
+                                {profileData.userInfo.imageUrl ? (
+                                    <img 
+                                        src={BACKEND_PATH + profileData.userInfo.imageUrl} 
+                                        alt="Фото" 
+                                        className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 flex items-center justify-center"
+                                    />
+                                ) : (
+                                    <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <span className="text-lg text-gray-500 font-medium">
+                                            {profileData.userInfo.firstName.charAt(0)}
+                                            {profileData.userInfo.lastName.charAt(0)}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Блок с информацией о пользователе */}
+                            <div className="space-y-2 flex-grow">
+                                <p className="text-lg">
+                                    <span className="font-semibold">Имя:</span> {profileData.userInfo.firstName} {profileData.userInfo.lastName}
+                                </p>
+                                <p className="text-lg">
+                                    <span className="font-semibold">Email:</span> {profileData.userInfo.email}
+                                </p>
+                                <button 
+                                    className="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"
+                                    onClick={() => handleSubmit()}
+                                >
+                                    Выйти
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -85,6 +109,7 @@ const Profile: React.FC = () => {
                                         name={event.title}
                                         date={event.eventDate}
                                         address={event.eventAddress}
+                                        usersCount={event.usersCount}
                                     />
                                 ))}
                             </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import useUserStore from "../store/UserStore.ts";
 import {BACKEND_PATH} from "../../constants/constants.ts";
+import { IUserInfo } from './Profile.tsx';
 
 export interface IEvent {
     eventId: number;
@@ -12,38 +13,40 @@ export interface IEvent {
     vkLink: string;
     tgLink: string;
     imageUrl: string;
+    usersCount: number;
 }
 
 const EventPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [event, setEvent] = useState<IEvent | null>(null);
+    const [users, setUsers] = useState<IUserInfo[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const { token } = useUserStore();
     const navigate = useNavigate();
     const userId = useUserStore((state) => state.userId);
 
-    useEffect(() => {
-        console.log("hello lit")
-        const fetchEvent = async () => {
-            setLoading(true);
-            try {
-                const response = await fetch(`${BACKEND_PATH}/event/${id}`);
+    const fetchEvent = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${BACKEND_PATH}/event/${id}`);
 
-                if (!response.ok) {
-                    throw new Error('Не удалось загрузить информацию о мероприятии');
-                }
-
-                const data = await response.json();
-                console.log(data.event)
-                setEvent(data.event);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Произошла ошибка при загрузке мероприятия');
-            } finally {
-                setLoading(false);
+            if (!response.ok) {
+                throw new Error('Не удалось загрузить информацию о мероприятии');
             }
-        };
 
+            const data = await response.json();
+            console.log(data.event)
+            setEvent(data.event);
+            setUsers(data.users);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Произошла ошибка при загрузке мероприятия');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchEvent();
     }, [id]);
 
@@ -72,6 +75,7 @@ const EventPage: React.FC = () => {
                 throw new Error('Не удалось зарегистрироваться на мероприятие');
             }
 
+            fetchEvent();
             alert('Вы успешно зарегистрировались на мероприятие!');
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Произошла ошибка при регистрации на мероприятие');
@@ -200,6 +204,39 @@ const EventPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+             {/* Участники */}
+             {users && users.length > 0 && (
+                        <div className="mt-8">
+                            <h2 className="text-xl font-semibold mb-4">Участники</h2>
+                            <div className="space-y-2">
+                                {users.map((user, index) => (
+                                    <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center w-full">
+                                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                                            {user.imageUrl ? (
+                                                <img 
+                                                    src={BACKEND_PATH + user.imageUrl} 
+                                                    alt={`${user.firstName[0]}${user.lastName[0]}`} 
+                                                    className="w-full h-full object-cover bg-gray-600 flex items-center justify-center"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                                                    <span className="text-sm font-bold text-white">
+                                                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="ml-3">
+                                            <p className="text-gray-100 font-medium">
+                                                {user.firstName} {user.lastName}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
             {/* Навигация */}
             <div className="mt-8">

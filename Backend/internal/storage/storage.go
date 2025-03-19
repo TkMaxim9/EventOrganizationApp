@@ -12,6 +12,7 @@ type Event struct {
 	VKLink        string    `json:"vkLink"`
 	TGLink        string    `json:"tgLink"`
 	ImageURL      string    `json:"imageUrl"`
+	UsersCount    int       `json:"usersCount"`
 }
 
 // EventCreateDto представляет собой DTO для создания события
@@ -27,10 +28,11 @@ type EventCreateDto struct {
 }
 
 type EventCardProps struct {
-	ID      int64  `json:"id"`
-	Name    string `json:"name"`
-	Date    string `json:"date"`
-	Address string `json:"address"`
+	ID         int64  `json:"id"`
+	Name       string `json:"name"`
+	Date       string `json:"date"`
+	Address    string `json:"address"`
+	UsersCount int    `json:"usersCount"`
 }
 
 type CrateUserDto struct {
@@ -45,6 +47,7 @@ type UserInfo struct {
 	Email     string `json:"email"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
+	ImageUrl  string `json:"imageUrl"`
 }
 
 type ProfileInfo struct {
