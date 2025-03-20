@@ -48,9 +48,11 @@ type UserInfo struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	ImageUrl  string `json:"imageUrl"`
+	Id        int    `json:"id"`
 }
 
 type ProfileInfo struct {
-	User   UserInfo `json:"userInfo"`
-	Events []Event  `json:"events"`
+	User             UserInfo `json:"userInfo"`
+	Events           []Event  `json:"events"`
+	RegisteredEvents []Event  `json:"registeredEvents"`
 }

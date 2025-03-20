@@ -22,9 +22,10 @@ const EventPage: React.FC = () => {
     const [users, setUsers] = useState<IUserInfo[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const { token } = useUserStore();
+    const token = useUserStore((state) => state.token);
     const navigate = useNavigate();
     const userId = useUserStore((state) => state.userId);
+    const isUserRegistered = token && users?.some(user => user.id === userId);
 
     const fetchEvent = async () => {
         setLoading(true);
@@ -195,13 +196,18 @@ const EventPage: React.FC = () => {
 
                     {/* Кнопка регистрации */}
                     <div className="mt-8">
-                        <button
-                            onClick={handleRegisterForEvent}
-                            className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200"
-                        >
-                            {token ? 'Зарегистрироваться на мероприятие' : 'Войдите, чтобы зарегистрироваться'}
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleRegisterForEvent}
+                        className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200"
+                        disabled={(isUserRegistered == true)}
+                    >
+                        {token ? (
+                            isUserRegistered ? 'Вы уже зарегистрированы' : 'Зарегистрироваться на мероприятие'
+                        ) : (
+                            'Войдите, чтобы зарегистрироваться'
+                        )}
+                    </button>
+</div>
                 </div>
             </div>
 

@@ -63,6 +63,7 @@ type EventStorage interface {
 	RegisterUserForEvent(userId int, eventId int) (userEmail string, eventName string, err error)
 	GetFilteredEvents(title, date, address string) ([]storage.Event, error)
 	GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, error)
+	GetRegisteredEventsByUser(userId int) ([]storage.Event, error)
 }
 
 type UserCreatedEvent struct {
@@ -561,9 +562,16 @@ func GetProfileInfoHandler(log *slog.Logger, eventStorage EventStorage, validate
 			return
 		}
 
+		registeredEvents, err := eventStorage.GetRegisteredEventsByUser(idInt)
+		if err != nil {
+			log.Error(op, "failed to get user registered events", err)
+			render.JSON(w, r, response.Error("не удалось события на которые зарегестрирован пользователь"))
+			return
+		}
+
 		render.JSON(w, r, Response{
 			Response:    response.OK(),
-			ProfileInfo: storage.ProfileInfo{User: userInfo, Events: events},
+			ProfileInfo: storage.ProfileInfo{User: userInfo, Events: events, RegisteredEvents: registeredEvents},
 		})
 
 	}

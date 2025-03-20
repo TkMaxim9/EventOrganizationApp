@@ -10,11 +10,13 @@ export interface IUserInfo {
     lastName: string;
     email: string;
     imageUrl: string | null;
+    id?: number;
 }
 
 interface IProfile {
     userInfo: IUserInfo;
     events: IEvent[];
+    registeredEvents: IEvent[];
 }
 
 const Profile: React.FC = () => {
@@ -99,7 +101,7 @@ const Profile: React.FC = () => {
 
                     {/* Блок с событиями пользователя */}
                     <div className="mb-6">
-                        <h2 className="text-2xl font-bold mb-4">Мои события</h2>
+                        <h2 className="text-2xl font-bold mb-4">Созданные события</h2>
                         {profileData.events && profileData.events.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {profileData.events.map((event) => (
@@ -110,6 +112,30 @@ const Profile: React.FC = () => {
                                         date={event.eventDate}
                                         address={event.eventAddress}
                                         usersCount={event.usersCount}
+                                        isOwner = {true}
+                                        fetchFunc={fetchProfile}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500">У вас пока нет событий</p>
+                        )}
+                    </div>
+
+                    {/* Блок с событиями на которые заренитрирован пользователь */}
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold mb-4">Участие в мероприятиях</h2>
+                        {profileData.registeredEvents && profileData.registeredEvents.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {profileData.registeredEvents.map((event) => (
+                                    <EventCard
+                                        key={event.eventId}
+                                        id={event.eventId}
+                                        name={event.title}
+                                        date={event.eventDate}
+                                        address={event.eventAddress}
+                                        usersCount={event.usersCount}
+                                        isOwner = {false}
                                     />
                                 ))}
                             </div>

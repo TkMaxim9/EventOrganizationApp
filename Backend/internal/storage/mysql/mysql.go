@@ -369,7 +369,7 @@ func (r *Storage) GetEventsByUser(userId int) ([]storage.Event, error) {
 }
 
 func (r *Storage) GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, error) {
-	query := `SELECT u.Email, u.FirstName, u.LastName, u.ImageUrl
+	query := `SELECT u.UserID, u.Email, u.FirstName, u.LastName, u.ImageUrl
               FROM User u
               JOIN Registration reg ON u.UserID = reg.UserID
               WHERE reg.EventID = ?`
@@ -384,7 +384,7 @@ func (r *Storage) GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, erro
 
 	for rows.Next() {
 		var user storage.UserInfo
-		err := rows.Scan(&user.Email, &user.FirstName, &user.LastName, &user.ImageUrl)
+		err := rows.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.ImageUrl)
 		if err != nil {
 			return nil, fmt.Errorf("mysql.GetEventRegisteredUsers - row scanning error: %w", err)
 		}
@@ -398,4 +398,49 @@ func (r *Storage) GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, erro
 	log.Printf("Found %d registered users for event ID %d", len(users), eventId)
 
 	return users, nil
+}
+
+func (r *Storage) GetRegisteredEventsByUser(userId int) ([]storage.Event, error) {
+	query := `SELECT e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress,
+                   e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL,
+                   (SELECT COUNT(DISTINCT UserID) FROM registration WHERE EventID = e.EventID) as UsersCount
+           FROM Event e
+           INNER JOIN registration r ON e.EventID = r.EventID
+           WHERE r.UserID = ?
+           GROUP BY e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress,
+                   e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL
+           ORDER BY e.EventDate ASC`
+
+	rows, err := r.db.Query(query, userId)
+	if err != nil {
+		return nil, fmt.Errorf("mysql.GetRegisteredEventsByUser - query execution error: %w", err)
+	}
+	defer rows.Close()
+
+	var events []storage.Event
+	for rows.Next() {
+		var e storage.Event
+		err := rows.Scan(
+			&e.EventID,
+			&e.Title,
+			&e.Description,
+			&e.EventDate,
+			&e.EventAddress,
+			&e.CreatorUserID,
+			&e.VKLink,
+			&e.TGLink,
+			&e.ImageURL,
+			&e.UsersCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("mysql.GetRegisteredEventsByUser - row scanning error: %w", err)
+		}
+		events = append(events, e)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("mysql.GetRegisteredEventsByUser - rows iteration error: %w", err)
+	}
+
+	return events, nil
 }
