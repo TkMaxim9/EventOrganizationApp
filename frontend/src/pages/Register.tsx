@@ -16,6 +16,9 @@ const Register: React.FC = () => {
     const navigate = useNavigate();
     const login = useUserStore((state) => state.login);
 
+    const MAX_LENGTH = 64;
+    const   MIN_PASSWORD_LENGTH = 8;
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setAvatar(e.target.files[0]);
@@ -25,9 +28,27 @@ const Register: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        console.log(firstName.length)
 
         if (password !== confirmPassword) {
             setError("Пароли не совпадают");
+            return;
+        }
+        
+
+        if (
+            firstName.length > MAX_LENGTH ||
+            lastName.length > MAX_LENGTH ||
+            password.length > MAX_LENGTH
+        ) {
+            setError("Все текстовые поля должны содержать не более 64 символов");
+            return;
+        }
+
+        if (
+            password.length < MIN_PASSWORD_LENGTH
+        ) {
+            setError("Минимальная длина пароля - 8 символов");
             return;
         }
 
@@ -59,7 +80,7 @@ const Register: React.FC = () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || "Ошибка при регистрации");
+                throw new Error(data.error || "Ошибка при регистрации");
             }
 
             login(data.userId, data.token);

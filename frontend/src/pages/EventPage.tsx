@@ -14,6 +14,7 @@ export interface IEvent {
     tgLink: string;
     imageUrl: string;
     usersCount: number;
+    creatorUserId?: number;
 }
 
 const EventPage: React.FC = () => {
@@ -25,7 +26,7 @@ const EventPage: React.FC = () => {
     const token = useUserStore((state) => state.token);
     const navigate = useNavigate();
     const userId = useUserStore((state) => state.userId);
-    const isUserRegistered = token && users?.some(user => user.id === userId);
+    const isUserRegistered = userId && users?.some(user => user.id === userId);
 
     const fetchEvent = async () => {
         setLoading(true);
@@ -55,7 +56,9 @@ const EventPage: React.FC = () => {
     const handleRegisterForEvent = async () => {
         if (!token) {
             // Если пользователь не авторизован, перенаправляем на страницу входа
-            navigate('/login');
+            const currentPath = window.location.pathname;
+            console.log(currentPath)
+            navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
             return;
         }
 
@@ -80,6 +83,38 @@ const EventPage: React.FC = () => {
             alert('Вы успешно зарегистрировались на мероприятие!');
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Произошла ошибка при регистрации на мероприятие');
+        }
+    };
+
+    const handleCancelRegistration = async () => {
+        if (!token) {
+            const currentPath = window.location.pathname;
+            console.log(currentPath)
+            navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${BACKEND_PATH}/registration`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    event_id: Number(id),
+                    user_id: userId ? userId : 1
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Не удалось отменить регистрацию на мероприятие');
+            }
+            
+            fetchEvent();
+            alert('Вы успешно отменили регистрацию на мероприятие!');
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Произошла ошибка при отмене регистрации на мероприятие');
         }
     };
 
@@ -184,6 +219,41 @@ const EventPage: React.FC = () => {
                         </div>
                     </div>
 
+                    {users && users.length > 0 && (
+    <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Организатор</h2>
+        <div className="space-y-2">
+            {users
+                .filter(user => user.id == event.creatorUserId) // Фильтруем только организатора
+                .map((user, index) => (
+                    <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center w-full">
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                            {user.imageUrl ? (
+                                <img
+                                    src={BACKEND_PATH + user.imageUrl}
+                                    alt={`${user.firstName[0]}${user.lastName[0]}`}
+                                    className="w-full h-full object-cover bg-gray-600 flex items-center justify-center"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                                    <span className="text-sm font-bold text-white">
+                                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-gray-100 font-medium">
+                                {user.firstName} {user.lastName}
+                            </p>
+                        </div>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+)}
+
                     {/* Описание */}
                     <div className="mt-6">
                         <h2 className="text-xl font-semibold mb-3">Описание</h2>
@@ -197,14 +267,14 @@ const EventPage: React.FC = () => {
                     {/* Кнопка регистрации */}
                     <div className="mt-8">
                     <button
-                        onClick={handleRegisterForEvent}
+                        onClick={isUserRegistered ? () => handleCancelRegistration() : () => handleRegisterForEvent()}
                         className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200"
-                        disabled={(isUserRegistered == true)}
+                        disabled={(userId == event.creatorUserId)}
                     >
                         {token ? (
-                            isUserRegistered ? 'Вы уже зарегистрированы' : 'Зарегистрироваться на мероприятие'
+                            isUserRegistered ? 'Отменить запись' : (userId != event.creatorUserId ? 'Зарегистрироваться на мероприятие' : 'Вы организатор')
                         ) : (
-                            'Войдите, чтобы зарегистрироваться'
+                            isUserRegistered ? 'Отменить запись' : (userId != event.creatorUserId ? 'Зарегистрироваться на мероприятие' : 'Вы организатор')
                         )}
                     </button>
 </div>

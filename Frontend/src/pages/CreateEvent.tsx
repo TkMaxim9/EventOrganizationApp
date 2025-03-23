@@ -26,6 +26,7 @@ const CreateEvent: React.FC = () => {
 
     const [errors, setErrors] = useState<Partial<Record<keyof IEvent, string>>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const userId = useUserStore((state) => state.userId);
     const navigate = useNavigate();
 
@@ -51,6 +52,9 @@ const CreateEvent: React.FC = () => {
         if (!event.title.trim()) {
             newErrors.title = 'Название мероприятия обязательно';
         }
+        if (event.title.trim().length > 64) {
+            newErrors.title = 'Максимум 64 символов';
+        }
 
         if (!event.description.trim()) {
             newErrors.description = 'Описание мероприятия обязательно';
@@ -58,10 +62,21 @@ const CreateEvent: React.FC = () => {
 
         if (!event.eventDate.trim()) {
             newErrors.eventDate = 'Дата мероприятия обязательна';
+        } else {
+            // Проверка, что дата мероприятия не в прошлом
+            const eventDateTime = new Date(event.eventDate);
+            const currentDateTime = new Date();
+            
+            if (eventDateTime <= currentDateTime) {
+                newErrors.eventDate = 'Дата и время мероприятия должны быть в будущем';
+            }
         }
 
         if (!event.eventAddress.trim()) {
             newErrors.eventAddress = 'Адрес мероприятия обязателен';
+        }
+        if (event.eventAddress.trim().length > 64) {
+            newErrors.eventAddress = 'Максимум 64 символа';
         }
 
         setErrors(newErrors);
@@ -70,6 +85,7 @@ const CreateEvent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
     
         if (!validateForm()) {
             return;
@@ -81,7 +97,9 @@ const CreateEvent: React.FC = () => {
             const creatorUserID = userId;
 
             if (!creatorUserID) {
-                navigate("/login");
+                navigate("/login", { 
+                    state: { redirectUrl: window.location.pathname } 
+                });
                 setIsSubmitting(false);
                 return;
             }
@@ -113,7 +131,7 @@ const CreateEvent: React.FC = () => {
             const result = await response.json();
     
             if (!response.ok) {
-                throw new Error(result.message || "Ошибка при создании мероприятия");
+                throw new Error(result.error || "Ошибка при создании мероприятия");
             }
     
             setEvent({
@@ -128,9 +146,10 @@ const CreateEvent: React.FC = () => {
     
             alert("Мероприятие успешно создано!");
             navigate("/");
-        } catch (error) {
-            console.error("Ошибка при создании мероприятия:", error);
-            alert("Произошла ошибка при создании мероприятия. Пожалуйста, попробуйте снова.");
+        } catch (err) {
+            console.error("Ошибка при создании мероприятия:", err);
+            //alert("Произошла ошибка при создании мероприятия. Пожалуйста, попробуйте снова.");
+            setError(err instanceof Error ? err.message : "Произошла ошибка при входе в систему");
         } finally {
             setIsSubmitting(false);
         }
@@ -155,6 +174,11 @@ const CreateEvent: React.FC = () => {
         <div className="pt-22 p-6">
             <div className="main p-4 max-w-2xl mx-auto bg-gray-50/15 rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold mb-6">Создание нового мероприятия</h2>
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        <span className="block sm:inline">{error}</span>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -284,7 +308,6 @@ const CreateEvent: React.FC = () => {
                 </form>
             </div>
         </div>
-
     );
 };
 

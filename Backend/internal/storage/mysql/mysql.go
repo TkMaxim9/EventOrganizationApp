@@ -57,6 +57,27 @@ func (r *Storage) DeleteEvent(eventID int) error {
 	return nil
 }
 
+func (r *Storage) CancelRegistration(eventId, userId int) error {
+	query := `DELETE FROM Registration WHERE EventID = ? AND UserID = ?`
+
+	result, err := r.db.Exec(query, eventId, userId)
+	if err != nil {
+		return fmt.Errorf("mysql.CancelRegistration - query execution error: %w", err)
+	}
+
+	// Проверяем, было ли действительно удалено событие
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("mysql.CancelRegistration - couldn't get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("mysql.CancelRegistration - event with ID %d not found", eventId)
+	}
+
+	return nil
+}
+
 func (r *Storage) EditEvent(eventId int64, dto storage.EventCreateDto) error {
 	const op = "storage.postgres.UpdateEvent"
 
@@ -368,13 +389,22 @@ func (r *Storage) GetEventsByUser(userId int) ([]storage.Event, error) {
 	return events, nil
 }
 
-func (r *Storage) GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, error) {
-	query := `SELECT u.UserID, u.Email, u.FirstName, u.LastName, u.ImageUrl
-              FROM User u
-              JOIN Registration reg ON u.UserID = reg.UserID
-              WHERE reg.EventID = ?`
+func (r *Storage) GetEventRegisteredUsers(eventId, creatorId int) ([]storage.UserInfo, error) {
+	// Этот запрос объединяет две выборки: зарегистрированных пользователей и создателя
+	query := `
+        SELECT u.UserID, u.Email, u.FirstName, u.LastName, u.ImageUrl
+        FROM User u
+        JOIN Registration reg ON u.UserID = reg.UserID
+        WHERE reg.EventID = ?
+        
+        UNION
+        
+        SELECT UserID, Email, FirstName, LastName, ImageUrl
+        FROM User
+        WHERE UserID = ?
+    `
 
-	rows, err := r.db.Query(query, eventId)
+	rows, err := r.db.Query(query, eventId, creatorId)
 	if err != nil {
 		return nil, fmt.Errorf("mysql.GetEventRegisteredUsers - query error: %w", err)
 	}
@@ -399,7 +429,6 @@ func (r *Storage) GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, erro
 
 	return users, nil
 }
-
 func (r *Storage) GetRegisteredEventsByUser(userId int) ([]storage.Event, error) {
 	query := `SELECT e.EventID, e.Title, e.Description, e.EventDate, e.EventAddress,
                    e.CreatorUserID, e.VKLink, e.TGLink, e.ImageURL,

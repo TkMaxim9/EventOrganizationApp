@@ -99,28 +99,37 @@ const Profile: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Блок с событиями пользователя */}
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-bold mb-4">Созданные события</h2>
-                        {profileData.events && profileData.events.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {profileData.events.map((event) => (
-                                    <EventCard
-                                        key={event.eventId}
-                                        id={event.eventId}
-                                        name={event.title}
-                                        date={event.eventDate}
-                                        address={event.eventAddress}
-                                        usersCount={event.usersCount}
-                                        isOwner = {true}
-                                        fetchFunc={fetchProfile}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-gray-500">У вас пока нет событий</p>
-                        )}
-                    </div>
+                   {/* Блок с событиями пользователя */}
+<div className="mb-6">
+    <h2 className="text-2xl font-bold mb-4">Созданные события</h2>
+    {profileData.events && profileData.events.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {profileData.events.map((event) => {
+                // Преобразуем строку даты в объект Date
+                const eventDate = new Date(event.eventDate);
+                // Добавляем 5 часов
+                eventDate.setHours(eventDate.getHours() + 5);
+                // Преобразуем обратно в строку
+                const adjustedDate = eventDate.toISOString();
+                
+                return (
+                    <EventCard
+                        key={event.eventId}
+                        id={event.eventId}
+                        name={event.title}
+                        date={adjustedDate}
+                        address={event.eventAddress}
+                        usersCount={event.usersCount}
+                        isOwner={true}
+                        fetchFunc={fetchProfile}
+                    />
+                );
+            })}
+        </div>
+    ) : (
+        <p className="text-gray-500">У вас пока нет событий</p>
+    )}
+</div>
 
                     {/* Блок с событиями на которые заренитрирован пользователь */}
                     <div className="mb-6">

@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import useUserStore from "../store/UserStore";
 import {AUTH_PATH, BACKEND_PATH} from "../../constants/constants.ts";
 
+
 const Login: React.FC = () => {
+    const location = useLocation(); // Импортируйте useLocation из react-router-dom
+    
+    // Получаем параметр redirect из URL
+    const searchParams = new URLSearchParams(location.search);
+    const redirectPath = searchParams.get('redirect') || '/';
+    console.log(redirectPath)
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -16,9 +24,8 @@ const Login: React.FC = () => {
         e.preventDefault();
         setError(null);
         setLoading(true);
-
+    
         try {
-            // Запрос к API для аутентификации
             const response = await fetch(AUTH_PATH + "/login", {
                 method: "POST",
                 headers: {
@@ -26,27 +33,31 @@ const Login: React.FC = () => {
                 },
                 body: JSON.stringify({ email, password }),
             });
-
-            const data = await response.json();
-
+    
+            const contentType = response.headers.get("Content-Type");
+            let data;
+    
+            if (contentType?.includes("application/json")) {
+                data = await response.json();
+            } else {
+                data = await response.text(); // Если сервер вернул текст
+                throw new Error(data || "Ошибка при входе в систему");
+            }
+    
             if (!response.ok) {
                 throw new Error(data.message || "Ошибка при входе в систему");
             }
-
-            //Сохраняем данные пользователя и токен в store
+    
             login(data.user.id, data.token);
-            
-            
-            //login({id: 1, name: "Имя Фамилия", email:"email@example.com"}, "token")
 
-            // Перенаправляем пользователя на главную страницу
-            navigate("/");
+            navigate(redirectPath);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Произошла ошибка при входе в систему");
         } finally {
             setLoading(false);
         }
     };
+    
 
     return (
         <div className="pt-22 main min-h-screen flex items-center justify-center  py-12 px-4 sm:px-6 lg:px-8">

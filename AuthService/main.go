@@ -84,13 +84,16 @@ func main() {
 		log.Fatalf("Failed to create users table: %v", err)
 	}
 
+	createUser("ser228@mail.ru", "12341234")
+	createUser("alex555@mail.ru", "12341234")
+
 	// Start Kafka consumer in a goroutine
 	// go consumeKafkaMessages()
 
 	// Set up HTTP server with Chi router
 	r := chi.NewRouter()
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // В продакшене лучше указать конкретный домен, например, "http://localhost:3000"
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -125,7 +128,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	// Check if user exists and password is correct
 	user, err := authenticateUser(loginReq.Email, loginReq.Password)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, "Неверный логин или пароль", http.StatusUnauthorized)
 		return
 	}
 

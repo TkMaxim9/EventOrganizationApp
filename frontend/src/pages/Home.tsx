@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import EventCard, {EventCardProps} from "../components/EventCard";
 import {BACKEND_PATH} from "../../constants/constants.ts";
 import {Link} from "react-router-dom";
+import useUserStore from "../store/UserStore.ts";
 
 
 const Home: React.FC = () => {
@@ -10,6 +11,7 @@ const Home: React.FC = () => {
     const [dateFilter, setDateFilter] = useState<string>("");
     const [addressFilter, setAddressFilter] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
+    const userId = useUserStore((state) => state.userId);
 
     const fetchEvents = (params : URLSearchParams) => {
         setLoading(true);
@@ -67,7 +69,7 @@ const Home: React.FC = () => {
             <h2 className="text-2xl font-bold mb-4">Список мероприятий</h2>
 
             <button className="w-full mb-4 hover:text-white">
-                <Link to="/create-event" className="no-blue-hover">
+                <Link to={userId ? "/create-event" : "/login"} className="no-blue-hover">
                     + Создать мерприятие
                 </Link>
             </button>

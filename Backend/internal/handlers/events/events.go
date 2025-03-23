@@ -62,8 +62,9 @@ type EventStorage interface {
 	DeleteEvent(eventID int) error
 	RegisterUserForEvent(userId int, eventId int) (userEmail string, eventName string, err error)
 	GetFilteredEvents(title, date, address string) ([]storage.Event, error)
-	GetEventRegisteredUsers(eventId int) ([]storage.UserInfo, error)
+	GetEventRegisteredUsers(eventId, creatoriId int) ([]storage.UserInfo, error)
 	GetRegisteredEventsByUser(userId int) ([]storage.Event, error)
+	CancelRegistration(eventId, userId int) error
 }
 
 type UserCreatedEvent struct {
@@ -213,7 +214,8 @@ func CreateEventHandler(log *slog.Logger, eventStorage EventStorage, validate *v
 		id, err := eventStorage.AddEvent(eventDto)
 		if err != nil {
 			log.Error(op, "failed to add event", err)
-			render.JSON(w, r, response.Error("Ошибка при добавлении события"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, response.Error("Такое событие уже существует"))
 			return
 		}
 
@@ -336,6 +338,42 @@ func DeleteEventHandler(log *slog.Logger, eventStorage EventStorage, validate *v
 		if err != nil {
 			log.Error(op, "failed to delete", err)
 			render.JSON(w, r, response.Error("не удалось удалить событие"))
+			return
+		}
+
+		render.JSON(w, r, Response{
+			Response: response.OK(),
+		})
+	}
+}
+
+func CancelRegistrationHandler(log *slog.Logger, eventStorage EventStorage, validate *validator.Validate) http.HandlerFunc {
+	type request struct {
+		EventID int `json:"event_id" validate:"required,min=1"`
+		UserID  int `json:"user_id" validate:"required,min=1"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.events.CancelRegistrationHandler"
+
+		var req request
+		if err := render.DecodeJSON(r.Body, &req); err != nil {
+			log.Error(op, "failed to decode request body", err)
+			render.JSON(w, r, response.Error("некорректные данные запроса"))
+			return
+		}
+
+		if err := validate.Struct(req); err != nil {
+			validationErrors := err.(validator.ValidationErrors)
+			log.Error(op, "invalid request", validationErrors)
+			render.JSON(w, r, response.Error("ошибка валидации"))
+			return
+		}
+
+		err := eventStorage.CancelRegistration(req.EventID, req.UserID)
+		if err != nil {
+			log.Error(op, "failed to cancel registration", err)
+			render.JSON(w, r, response.Error("не удалось отменить регистрацию"))
 			return
 		}
 
@@ -528,7 +566,8 @@ func AddUserHandler(log *slog.Logger, eventStorage EventStorage, validate *valid
 		id, err := eventStorage.AddUser(req)
 		if err != nil {
 			log.Error(op, "failed to register user", err)
-			render.JSON(w, r, response.Error("Не удалось зарегистрировать пользователя"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, response.Error("Пользователь с такой почтой уже зарегистрирован"))
 			return
 		}
 
@@ -596,7 +635,7 @@ func GetEventPageHandler(log *slog.Logger, eventStorage EventStorage, validate *
 			return
 		}
 
-		users, err := eventStorage.GetEventRegisteredUsers(idInt)
+		users, err := eventStorage.GetEventRegisteredUsers(idInt, (int)(event.CreatorUserID))
 		if err != nil {
 			log.Error(op, "failed to get reg users", err)
 			render.JSON(w, r, response.Error("не удалось получить зарег пользователей"))
@@ -618,6 +657,7 @@ func Init(router *chi.Mux, log *slog.Logger, eventStorage EventStorage, validate
 	router.Get("/event/{id}", GetEventPageHandler(log, eventStorage, validate))
 	router.Put("/event/{id}", UpdateEventHandler(log, eventStorage, validate))
 	router.Delete("/event/{id}", DeleteEventHandler(log, eventStorage, validate))
+	router.Delete("/registration", CancelRegistrationHandler(log, eventStorage, validate))
 	router.Post("/participate", RegisterUserForEventHandler(log, eventStorage, validate, emailClient))
 	router.Post("/register", AddUserHandler(log, eventStorage, validate))
 	router.Get("/profile/{id}", GetProfileInfoHandler(log, eventStorage, validate))

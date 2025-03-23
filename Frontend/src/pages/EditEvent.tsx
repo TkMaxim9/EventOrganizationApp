@@ -154,7 +154,7 @@ const EditEvent: React.FC = () => {
                 formData.append("keepOriginalImage", "true");
             }
     
-            const response = await fetch(`${BACKEND_PATH}/event/${id}`, {
+            const response = await fetch(`${BACKEND_PATH}/profile`, {
                 method: "PUT",
                 body: formData,
             });
@@ -304,7 +304,7 @@ const EditEvent: React.FC = () => {
                         {event.imageUrl && (
                             <div className="mt-2">
                                 <img
-                                    src={event.imageUrl}
+                                    src={BACKEND_PATH + event.imageUrl}
                                     alt="Превью"
                                     className="h-32 object-cover rounded-md"
                                 />
@@ -320,7 +320,7 @@ const EditEvent: React.FC = () => {
                     <div className="pt-4 flex space-x-4">
                         <button
                             type="button"
-                            onClick={() => navigate(`/event/${id}`)}
+                            onClick={() => navigate(`/profile`)}
                             className="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md"
                         >
                             Отмена

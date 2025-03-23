@@ -7,9 +7,15 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
+import { useEffect } from "react";
 
 
 function App() {
+    useEffect(() => {
+        document.title = "Event organization";
+      }, []);
+    
+
     return (
         <Router>
             <Header />
